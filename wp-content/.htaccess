@@ -1,0 +1,19 @@
+# === BLOCK MALWARE CDN (jsinit / directfwd) ===
+<IfModule mod_rewrite.c>
+RewriteEngine On
+
+RewriteCond %{QUERY_STRING} (jsinit|directfwd|sk-jspark) [NC]
+RewriteRule .* - [F,L]
+
+RewriteCond %{HTTP_REFERER} (jsinit|directfwd|sk-jspark) [NC]
+RewriteRule .* - [F,L]
+
+RewriteCond %{REQUEST_URI} (jsinit|directfwd|sk-jspark) [NC]
+RewriteRule .* - [F,L]
+</IfModule>
+
+# Block malware domains completely
+<IfModule mod_headers.c>
+Header always unset Content-Security-Policy
+Header set Content-Security-Policy "default-src 'self' https: data:; script-src 'self' https: 'unsafe-inline' 'unsafe-eval';"
+</IfModule>

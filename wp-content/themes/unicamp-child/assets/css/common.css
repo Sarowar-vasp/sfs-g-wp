@@ -1,0 +1,1145 @@
+/*
+Theme Name: Unicamp Child
+Theme URI: https://unicamp.thememove.com/
+Author: ThemeMove
+Author URI: https://thememove.com/
+Version: 1.0.0
+Template: unicamp
+Text Domain: unicamp-child
+Tags: editor-style, featured-images, microformats, post-formats, rtl-language-support, sticky-post, threaded-comments, translation-ready
+*/
+.top-bar-03 {
+  padding-top: 0px !important;
+  padding-bottom: 0px !important;
+  border-bottom-width: 0px;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 26px;
+  background-color: #10386B;
+  border-bottom-color: rgba(0, 0, 0, 0);
+  color: #fff;
+   /*z-index: 999999999 !important; */
+   position: sticky !important; 
+}
+
+.elementor-column.elementor-col-66.elementor-inner-column.elementor-element.elementor-element-64d620f {
+    overflow: hidden !important;
+}
+
+.select2-container.select2-container.select2-container--default.select2-container--open .select2-selection--single, .select2-container.select2-container.select2-container--default.select2-container--open .select2-dropdown {
+  color: var(--unicamp-color-form-focus-text);
+  border-color: var(--unicamp-color-form-focus-border);
+  background-color: oldlace !important;
+}
+
+@media only screen and (max-width: 600px) {
+  body .page-top-bar {
+    display: none !important;
+  }
+  body #custom-policy{
+	display:  none !important;	
+  }
+  body .slide-layer-wrap {
+    margin: 0 0 0 70px !important;
+  }
+}
+
+
+@media only screen and (max-width: 800px) {
+  body .slide-layer-wrap {
+    margin: 0 0 0 40px !important;
+  }
+}
+
+.page-title-bar-bg img {
+  object-fit: cover;
+  object-position: center 10%; /* move visible area */
+  height: 100%;
+  width: 100%;
+}
+
+/* .page-top-bar {
+	position: relative !important;
+	top: 0 !important;
+} */
+.page-title-bar-bg {
+  height: 580px !important;
+}
+
+.page-title-bar-01 {
+/*   margin-bottom: 150px !important; */
+}
+
+.page-title-bar-02 {
+/*   margin-bottom: 150px !important; */
+}
+
+.page-title-bar-bg {
+    position: absolute !important;
+    background-repeat: no-repeat !important;
+    /*background-attachment: fixed !important;*/
+	background-position: center top !important;
+/*     background-size: contain !important; */
+}
+
+#page-breadcrumb {
+  bottom: 0;
+  position: relative;
+  top: 350px;
+  left: 10px !important;
+  color: white;
+}
+
+.page-title-bar .heading {
+/*   margin-bottom: -150px !important; */
+}
+
+.page-title-bar-heading {
+/*   opacity: 0 !important; */
+}
+
+.custom-laboratory .insight_core_breadcrumb {
+  display: none;
+}
+
+.page-title-bar-heading .heading {
+/*   font-size: 16px !important; */
+/*   background: rebeccapurple !important; */
+/*   transform: translate(286px,160px) !important; */
+/* 	color: #af1a31 !important; */
+	color: white !important;
+	font-size: 18px !important;
+	font-weight: bold;
+}
+
+#page-breadcrumb {
+  top: 0px !important;
+}
+
+.insight_core_breadcrumb a{
+  color: white !important;
+}
+
+.page-title-bar-inner {
+  height: 580px !important;
+  border-bottom-style: none !important;
+}
+
+@media (max-width: 768px) {
+	.page-title-bar-heading  {
+		bottom: 40px !important;
+	}
+}
+
+@media (max-width: 1200px) {
+  .header-custom-icon i {
+	display: none;  
+   }
+  .elementor-110 .elementor-element.elementor-element-6d8c4c17 {
+    order: unset !important;
+  }
+  .elementor-110 .elementor-element.elementor-element-6d8c4c17 > .elementor-element-populated {
+      margin: 0px !important;
+	  margin-bottom: 10px;
+	  --e-column-margin-right: 0px !important;
+	  --e-column-margin-left: 0px !important;
+  }
+}
+
+/* Overlay background */
+.slide-menu-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 9999;
+  display: none;
+}
+
+.slide-menu-overlay.active {
+  display: block;
+  height: 100vh;
+}
+
+/* Split layout: left (content) + right (menu) */
+.slide-menu-content {
+  display: flex;
+  height: 100%;
+  width: 100%;
+}
+
+/* Left section */
+.slide-left {
+  flex: 4;
+  /*background: #fff;*/
+  color: #000;
+  padding: 35px;
+  overflow-y: auto;
+  animation: fadeIn 0.3s ease;
+  /*background-color: #fff;*/
+  /*background-image: repeating-linear-gradient(*/
+  /*  -45deg,              */
+  /*  #f8f8f8 0,*/
+  /*  #f8f8f8 2px,*/
+  /*  #ffffff 2px,*/
+  /*  #ffffff 6px*/
+  /*);*/
+  opacity: 0;
+}
+
+.menu-placeholder {
+  text-align: center;
+  color: #444;
+}
+
+.slide-left h2 {
+  font-size: 28px;
+  margin-bottom: 15px;
+}
+
+.slide-left p {
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+/* Right section (main nav) */
+.slide-right {
+  flex: 1;
+  background-color: #fff;
+  background-image: repeating-linear-gradient(
+    -45deg,               /* angle of stripes */
+    #f8f8f8 0,            /* light gray start */
+    #f8f8f8 2px,          /* stripe width */
+    #ffffff 2px,          /* space start */
+    #ffffff 6px           /* space width */
+  );
+  padding: 0px 15px;
+  border-left: 2px solid #ddd;
+  position: relative;
+  overflow-y: auto;
+}
+
+
+.slide-menu-logo {
+  max-width: 170px;
+  display: block;
+  margin: 30px;
+}
+#customMenuItems {
+  margin: 30px;
+}
+#customMenuItems ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+#customMenuItems li {
+  font-size:18px;
+  position: relative;
+  list-style: none;
+  cursor: pointer;
+  padding: 0 10px;
+  transition: color 0.3s ease;
+}
+
+#customMenuItems li:hover {
+  color: #9d2235;
+  font-weight: 600;
+}
+
+/* underline animation */
+#customMenuItems li::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 0;
+  height: 2px;
+  background-color: #9d2235;
+  transition: width 0.3s ease;
+}
+
+#customMenuItems li:hover::after {
+  width: 100%;
+}
+
+
+/* Close button */
+#closeMenu {
+  position: absolute;
+  top: 30px;
+  right: 15px;
+  background: none;
+  border: 1px solid #9d2235;
+  border-radius: 50%;
+  font-size: 30px;
+  cursor: pointer;
+  color: #000;
+  padding-inline: inherit;
+}
+
+/* Fade animation */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+ul li .nav-down {
+	font-weight: 400;
+	color: gray;
+	font-size: 14px;
+}
+
+body.menu-open {
+  overflow: hidden;
+}
+
+
+.slide-right ul li a {
+  display: inline-block;
+  position: relative;
+/*   font-weight: 600; */
+  text-decoration: none;
+  color: #000;
+  padding: 0;
+  transition: color 0.3s ease;
+  font-weight: bolder;
+}
+
+.slide-right ul li a::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 0;
+  height: 1px;
+  background-color: #000;
+  transition: width 0.3s ease;
+}
+
+.slide-right ul li a:hover::after {
+  width: 100%;
+}
+
+.slide-right ul li a:hover {
+  color: #000; /* keep text same */
+}
+
+.slide-right ul li a:hover::after {
+  width: 100%;
+  animation: blinkLine 0.5s linear;
+}
+
+@keyframes blinkLine {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+
+.menu-section {
+  position: relative;
+  background-size: cover;
+  background-position: center;
+  border-radius: 12px;
+  overflow: hidden;
+  min-height: 420px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.menu-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(6px);
+}
+
+.menu-content {
+  position: relative;
+  z-index: 2;
+  max-width: 800px;
+  text-align: center;
+  padding: 20px;
+}
+
+
+.menu-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1px;
+}
+
+.menu-grid a {
+  display: block;
+  padding: 10px 14px;
+  background: #fff;
+  border-radius: 6px;
+  color: #222;
+  font-weight: 500;
+  text-decoration: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  height: 169px;
+}
+
+.menu-grid a:hover {
+  background: #9d2235;
+  color: #fff;
+  transform: translateY(-3px);
+}
+
+h2.menu-section-title {
+    font-size: 45px;
+}
+
+.org-menu {
+  /*display: none;*/
+}
+
+
+/* ===== MENU TILE BASE STYLE ===== */
+
+/* Optional small hover pop */
+.three-col-menu {
+  display: flex;
+  width: 100%;
+  background: #fff;
+  /*border-top: 1px solid #eaeaea;*/
+  border-bottom: 1px solid #eaeaea;
+  /*min-height: 400px;*/
+}
+
+.left-groups {
+  flex: 0 0 45%;
+  /*background: #f9f9f9;*/
+  border-right: 5px solid #ddd;
+  /*border-left: 5px solid #ddd;*/
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  padding: 5px;
+}
+
+.group-item {
+  padding: 8px 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  color: #333;
+  cursor: pointer;
+  border-bottom: 1px solid #eee;
+  transition: background 0.3s, color 0.3s;
+}
+
+.group-item:hover,
+.group-item.active {
+  /*background: #9d2235;*/
+  /*color: #fff;*/
+  /*color: #9d2235;*/
+  font-weight: bold;
+  border-top: 1px solid #9d2235;
+  border-bottom: 1px solid #9d2235;
+  border-top-right-radius: 20px;
+  border-bottom-right-radius: 20px;
+  /*transform:scale(1.1);*/
+}
+
+.group-item .arrow {
+  font-size: 12px;
+  transition: transform 0.3s;
+}
+
+.group-item.active .arrow {
+  transform: rotate(90deg);
+}
+
+.middle-submenu {
+  flex: 0 0 25%;
+  padding-left: 30px;
+  opacity: 0;
+  transform: translateX(10px);
+  transition: all 0.4s ease;
+  border-top: 1px solid #eaeaea;
+}
+
+.middle-submenu.show {
+  opacity: 1;
+  transform: translateX(0);
+  background: #f9f9f9;
+}
+
+.submenu-link {
+  display: block;
+  padding: 6px 0;
+  font-size: 15px;
+  color: #333;
+  text-decoration: none;
+  border-bottom: 1px solid #eee;
+  transition: color 0.3s;
+}
+
+.submenu-link:hover, .submenu-link.active {
+  color: #9d2235;
+  border-top: 1px solid #9d2235;
+  border-bottom: 1px solid #9d2235;
+  padding-left: 5px;
+  /*border-bottom-left-radius:25px;*/
+  border-top-right-radius: 25px;
+  border-bottom-right-radius:25px;
+}
+
+.right-images {
+  flex: 0 0 30%;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  /*padding-left: 10px;*/
+  border-left: 1px solid #ddd;
+  justify-content: center;
+}
+
+.featured-card span {
+  position: absolute;
+  bottom: 8px;
+  left: 12px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 3px;
+  font-size: 13px;
+}
+
+.featured-card {
+  position: relative;
+  overflow: hidden;
+  /*border-radius: 10px;*/
+  animation-duration: var(--anim-dur, 10s);
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-in-out;
+}
+
+.featured-card img {
+  width: 80%;
+  border-radius: 25px;
+  transition: transform 0.4s ease;
+  height: 140px;
+}
+
+.featured-card:hover img {
+  transform: scale(1.05);
+}
+
+.featured-card span {
+  display: block;
+  text-align: center;
+  font-size: 14px;
+  color: #fff;
+  margin-top: 6px;
+}
+
+/* Animations */
+@keyframes slide {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(10px); }
+}
+@keyframes flip {
+  0%, 100% { transform: rotateY(0deg); }
+  50% { transform: rotateY(180deg); }
+}
+@keyframes fade {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+@keyframes pan {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+/* Assign classes */
+.anim-slide { animation-name: slide; }
+.anim-flip { animation-name: flip; }
+.anim-fade { animation-name: fade; }
+.anim-pulse { animation-name: pulse; }
+.anim-pan { animation-name: pan; }
+
+
+#customMenuItems li {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+#customMenuItems li:hover {
+  color: #9d2235;
+  font-weight: 600;
+}
+
+#customMenuItems li.active {
+  border-bottom: 1px solid #9d2235;
+  font-weight: 600;
+}
+
+
+.headroom--not-top .header-buttons .header-button {
+  /*display: inline-flex !important;*/
+}
+
+.header-03 .header-wrap {
+  height: 105px !important;
+}
+
+/*#menuIcon {*/
+/*  color: #ae152d;*/
+/*  position: relative;*/
+/*  transition: color 0.3s ease;*/
+/*  padding: 10px;*/
+/*  border-radius: 70px;*/
+/*  background: white;*/
+/*}*/
+
+/*#menuIcon::after {*/
+/*  content: "";*/
+/*  position: absolute;*/
+/*  inset: 0;*/
+/*  opacity: 0;*/
+/*  transition: opacity 0.3s ease;*/
+/*}*/
+
+header.headroom--not-top #menuIcon {
+  color: white;
+  background: black;
+}
+
+header.headroom--not-top #menuIcon::after {
+  opacity: 0.1;
+}
+
+
+/* add this to your existing CSS */
+#menuImg {
+  position: relative;
+  transition: color 0.3s ease;
+  /*padding: 10px;*/
+  border-radius: 5px;
+  background: transparent;
+  /*border: 1px solid #fff;*/
+  /* animation */
+  animation: borderPulse 4s ease-in-out infinite;
+}
+
+
+#menuImg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+header.headroom--not-top #menuImg {
+  display: none;
+}
+
+header.headroom--not-top #menuImg::after {
+  opacity: 0.1;
+}
+
+.page-title-bar-03 .page-title-bar-inner {
+  padding-top: 0px !important;
+  padding-bottom: 0px !important;
+}
+
+
+.tp_event-template-default .page-title-bar-03 .insight_core_breadcrumb a {
+  color:  #ffffff !important;
+}
+
+
+.tp_event-template-default .page-title-bar-03 .insight_core_breadcrumb li {
+  color: #ffffff !important;
+}
+
+.tp_event-template-default .page-title-bar-bg {
+  height: 580px !important;
+}
+
+.tp_event-template-default #page-breadcrumb {
+  margin-right: 25px !important;
+  text-align: right !important;
+}
+
+.tp_event-template-default #page-breadcrumb {
+  top: -50px !important;
+}
+
+.tp_event-template-default .page-title-bar-bg {
+    position: initial !important;
+}
+
+.tp_event-template-default .wp-block-button .wp-block-button__link {
+  padding: 0px !important;
+}
+
+.tp_event-template-default .entry-title {
+  max-width: 1250px !important;
+}
+
+.entry-event-section.entry-event-details {
+  text-align: justify !important;
+}
+
+.post-type-archive-tp_event .page-title-bar-bg {
+  background-image: url(/wp-content/uploads/2026/02/events.webp) !important;
+}
+
+.single-tp_event .page-title-bar-bg {
+  background-image: url(/wp-content/uploads/2026/02/events.webp) !important;
+}
+
+.blog .page-title-bar-bg {
+  background-image: url(/wp-content/uploads/2025/11/blog1-69181d6e3d1a2.webp) !important;
+}
+
+.sfs_gallery-template-default .page-title-bar-bg {
+  background-image: url(/wp-content/uploads/2025/11/school-calendar-69157078a2197.webp) !important;
+}
+.blog .top-bar-03 {
+	/*display: none !important;*/
+}
+
+.post-type-archive-tp_event .unicamp-nice-select-wrap .unicamp-nice-select-current {
+  color: #000000 !important;
+}
+
+.post-type-archive-tp_event .unicamp-event.style-grid-01 .event-caption {
+  padding: 3px 2px !important;
+}
+
+.post-type-archive-tp_event .link-in-title {
+  font-size: 20px !important;
+  /*color: #ae152d !important;*/
+}
+
+.post-type-archive-tp_event .event-excerpt {
+  text-align:  justify;
+}
+
+.unicamp-event.style-list .badal {
+  width: 100px !important;
+  margin: 0 10px 0 0 !important;
+  box-shadow: 1px 1px 0px 0px rgba(0, 0, 0, 0.2);
+}
+
+.post-type-archive-tp_event embed, iframe, object {
+  max-width: 100%;
+  border: 1px solid #ae152d;
+}
+
+.post-template-default .page-title-bar-bg {
+  background-image: url(/wp-content/uploads/2026/01/hpb-6.webp) !important;
+}
+
+.search .page-title-bar-bg {
+  background-image: url(/wp-content/uploads/2026/01/hpb-6.webp) !important;
+}
+
+.unicamp-pagination {
+  text-align: center;
+  margin-top: 30px;
+}
+
+.unicamp-pagination a,
+.unicamp-pagination span {
+  display: inline-block;
+  padding: 4px 7px;
+  margin: 0 3px;
+  border-radius: 4px;
+  color: #9d2235;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.unicamp-pagination a:hover,
+.unicamp-pagination span:hover
+{
+  background: #9d2235;
+  color: white;
+}
+
+.unicamp-pagination .current {
+  background: #9d2235;
+  color: #fff;
+  font-weight: 600;
+}
+
+.home .unicamp-box .event-time,
+.home .unicamp-box right-box .event-meta
+{
+	display: none;
+}
+
+.post-type-archive-tp_event .event-date--day {
+  font-size: 40px;
+  line-height: 1;
+  font-family: var(--unicamp-typography-headings-font-family);
+  font-weight: 700;
+  color: var(--unicamp-color-primary);
+}
+
+.post-type-archive-tp_event .event-date--month {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 24px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #9b9b9b;
+}
+
+@media (max-width: 991px) {
+  .post-type-archive-tp_event .unicamp-image {
+    width: 100px !important;
+  }
+}
+
+/*.post-type-archive-tp_event .unicamp-image {*/
+/*  width: 100px !important;*/
+/*}*/
+
+/*.post-type-archive-tp_event .unicamp-event.style-list .unicamp-image {*/
+/*  width: unset !important;*/
+/*  max-width: unset !important;*/
+/*}*/
+
+.desalite-logo-link {
+    margin-top: 5px;
+    display: block;
+    padding: 15px;
+    border-radius: 4px;
+    background: #fff;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid #f0f0f0;
+    overflow: hidden;
+    width: auto;
+}
+
+.desalite-logo-link:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+    border-color: #d4af37;
+}
+
+.desalite-logo-link img {
+    max-height: 70px;
+    width: auto;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+    transition: filter 0.3s ease;
+}
+
+.desalite-logo-link:hover img {
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
+}
+
+.archive .page-top-bar.top-bar-03 {
+  /*display: none;*/
+}
+
+.header-custom-image {
+    position: relative;
+    /*z-index: 9999;*/
+}
+
+.header-custom-image a {
+    position: relative;
+    /*z-index: 9999;*/
+    pointer-events: auto;
+}
+
+@media (min-width: 1200px) {
+  .page-top-bar .menu--secondary > ul > li > a {
+    padding: 0px !important;
+  }
+}
+
+.page-top-bar .menu--secondary > ul > li > a {
+  letter-spacing: 0px !important;
+  text-transform: capitalize !important;
+  padding: 10px !important;
+}
+
+.top-bar-wrap {
+  min-height: 60px !important;
+  margin-left: 15px !important;
+}
+
+/*.desktop-menu .sm-simple li > a {*/
+/*  padding: 13px 8px 13px 20px !important;*/
+/*  font-weight: bold;*/
+/*}*/
+
+/*.page-top-bar {*/
+/*    position: sticky !important;*/
+/*    top: 0 !important;*/
+/*    z-index: 9999 !important;*/
+/*}*/
+
+/*#menu.menu--primary {*/
+/*    position: sticky !important;*/
+/*    top: 0 !important;*/
+/*    z-index: 10000 !important;*/
+/*}*/
+
+
+.page-top-bar .top-bar-social-network a {
+  padding: 5px 10px 5px 5px !important;
+}
+
+
+/* Wrapper */
+.home-upcoming-events {
+    max-width: 520px;
+    background: #fff;
+    font-family: "Georgia", "Times New Roman", serif;
+}
+
+/* Header */
+.home-events-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+}
+
+.home-events-header h2 {
+    font-size: 28px;
+    font-weight: 600;
+}
+
+.home-events-header .view-all {
+    color: #c00000;
+    font-weight: 500;
+    /*font-size: 14px;*/
+    text-decoration: none;
+}
+
+/* Event row */
+.ue-item {
+    display: flex;
+    gap: 22px;
+    padding: 20px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.ue-item:last-child {
+    border-bottom: none;
+}
+
+/* Date block */
+.ue-date {
+    text-align: center;
+    min-width: 52px;
+}
+
+.ue-day {
+    font-size: 32px;
+    font-weight: 700;
+    color: #c00000;
+    line-height: 1;
+}
+
+.ue-month {
+    font-size: 12px;
+    letter-spacing: 1px;
+    color: #888;
+    margin-top: 4px;
+}
+
+/* Content */
+.ue-content {
+    flex: 1;
+}
+
+.ue-title {
+    font-size: 17px;
+    font-weight: 600;
+    line-height: 1.35;
+    margin: 0 0 6px;
+    color: #111;
+}
+
+.ue-time {
+    font-size: 14px;
+    color: #666;
+}
+
+/* Footer container */
+.ue-footer {
+    position: relative;
+    height: 40px;
+    margin-top: 10px;
+    border-bottom: 2px solid #c00000; /* red line */
+}
+
+/* Chevron arrow */
+.ue-chevron {
+    position: absolute;
+    left: 50%;
+    top: 2px;
+    width: 14px;
+    height: 14px;
+    border-right: 2px solid #c00000;
+    border-bottom: 2px solid #c00000;
+    transform: translateX(-50%) rotate(45deg);
+}
+
+.ue-chevron {
+    animation: bounceDown 1.5s infinite;
+}
+
+@keyframes bounceDown {
+    0%, 100% { transform: translateX(-50%) rotate(45deg); }
+    50% { transform: translateX(-50%) rotate(45deg) translateY(4px); }
+}
+
+.ue-event-type {
+    font-size: 13px;
+    margin: 4px 0 10px;
+    color: #666;
+}
+
+/* Holiday highlight */
+.ue-type-holiday {
+    color: #c00000;
+    font-weight: 600;
+}
+
+/* Instructional day */
+.ue-type-instructional-day,
+.ue-type-instructional {
+    color: #2563eb;
+}
+
+/* Meeting */
+.ue-type-meeting {
+    color: #6b7280;
+}
+
+/* Event type heading */
+.ue-type-title {
+    font-size: 13px;
+    font-weight: 700;
+    /*margin: 10px 0 6px;*/
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    color: #555;
+}
+
+/* Type colors */
+.ue-type-holiday {
+    color: #c00000;
+}
+
+.ue-type-instructional-day,
+.ue-type-instructional {
+    color: #2563eb;
+}
+
+.ue-type-meeting {
+    color: #6b7280;
+}
+
+/* Event title spacing */
+.ue-title {
+    margin: 0 0 6px;
+}
+
+/* Kill Font Awesome icon */
+.fm-icon .fa-wifi::before {
+    content: "" !important;
+    font-family: initial !important;
+}
+
+/* Inject custom SVG */
+.fm-icon .fa-wifi {
+    background: url("/wp-content/themes/unicamp-child/assets/images/desalite-connect.svg") no-repeat center;
+    background-size: contain;
+    width: 32px;
+    height: 32px;
+    display: inline-block;
+}
+
+.menu-item-26014 {
+    /*display: none !important;*/
+}
+
+/* Center event featured image / content image */
+.single-tp_event img {
+	display: block !important;
+	margin-left: auto !important;
+	margin-right: auto !important;
+}
+
+.page-top-bar .menu .sub-menu a {
+  padding: 20px !important;
+  color: black !important;
+}
+
+.page-top-bar .toggle-sub-menu {
+  display: none !important;
+}
+.unicamp-modern-slider-style-05 .tm-modern-slider .title mark {
+  padding: 0px 5px !important;
+}
+
+/* ---------------------------------------
+   Reverse Ken Burns Effect (Child Theme)
+   Default: zoom OUT
+   Active slide: zoom IN
+--------------------------------------- */
+
+/* Force default scale */
+.unicamp-slide-bg-animation-ken-burns .slide-bg-wrap {
+  -webkit-transform: scale(0.9) !important;
+  -ms-transform: scale(0.9) !important;
+  transform: scale(0.9) !important;
+
+  /*transition: transform 10s ease-in-out;*/
+  transition: transform 15s cubic-bezier(0.25, 0.1, 0.25, 1);
+  will-change: transform;
+}
+
+/* Active slide zooms IN */
+.unicamp-slide-bg-animation-ken-burns.swiper-slide-active .slide-bg-wrap {
+  -webkit-transform: scale(1.1) !important;
+  -ms-transform: scale(1.1) !important;
+  transform: scale(1.1) !important;
+}
+
+@media (max-width: 767px) {
+  .unicamp-slide-bg-animation-ken-burns .slide-bg-wrap,
+  .unicamp-slide-bg-animation-ken-burns.swiper-slide-active .slide-bg-wrap {
+    transform: scale(1) !important;
+  }
+  #page-navigation-secondary {
+  	margin-left: -20px !important;
+  }
+  .top-bar-wrap > * {
+  	padding: 0px !important;
+    letter-spacing: 5px !important;
+  }
+  #page-open-popup-search {
+  	display: none;
+  }
+  .page-top-bar .menu--secondary > ul > li > a {
+  	padding: 0px !important;
+  }
+}
+
+body .single-tp_event {
+  font-family: Roboto Slab !important;  
+}
