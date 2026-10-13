@@ -6,6 +6,25 @@ Stop unnecessary imported-media growth, preserve legitimate content, and safely 
 
 This document is a plan only. It does not authorize production deletion or change application code. The existing [analysis](../CRON-IMAGE-STORAGE-ANALYSIS.md) provides context; the qualifications below take precedence where that document overstates the findings.
 
+## Minimal file-change constraint
+
+The implementation should change only one application file: `wp-content/themes/unicamp-child/functions.php`. Keep changes focused on the existing importers, media helper, and cleanup callback. Small shared helpers may live in that same file where necessary.
+
+- Do not modify WordPress core, third-party plugins, the parent theme, or `wp-config.php`.
+- Do not introduce a new plugin, importer framework, or broad refactor.
+- Treat the phases below as logical stages, not separate files or modules.
+- Perform baseline measurement, historical audits, and approved cleanup as operational work using existing tooling. Do not add permanent cleanup scripts or admin screens as part of this fix.
+- Validate with focused staging scenarios; avoid adding test infrastructure solely for this patch.
+- If a required fix cannot safely fit this scope, explain the specific reason before expanding the file footprint.
+
+### Delivery order within the single file
+
+1. Contain raw duplicate deletion, stop unused notice downloads, and correct insertion-error and attachment-path handling.
+2. Add source-identity checks and importer locking, then correct media reuse, blog attachment handling, and pagination in the existing functions.
+3. Validate and deploy the prevention changes before performing any historical cleanup.
+
+Keep each change reviewable and preserve unrelated theme behavior. A one-file patch still requires the validation and reference checks below; it does not make historical media safe to delete automatically.
+
 ## Findings guiding the work
 
 - The duplicate-event SQL deletes post rows by title and leaves attachments, files, metadata, and taxonomy relationships behind. It can also delete legitimate same-title content across categories and statuses.

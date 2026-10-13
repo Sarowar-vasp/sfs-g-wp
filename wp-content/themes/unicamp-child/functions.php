@@ -3283,8 +3283,80 @@ require_once(ABSPATH . 'wp-admin/includes/image.php');
 // Define the option key for persistent storage
 const SFS_IMPORTER_PAGE_KEY = 'sfs_importer_current_page';
 const SFS_DEFAULT_INFO_IMAGE_ID = 17070;
-    
+
+// Serialize all three feeds, including shared-image lookups. A database advisory
+// lock is atomic and is released on connection close, even after a fatal error.
+function sfs_run_locked_import($callback) {
+    global $wpdb;
+    $lock = 'sfs_import_' . md5(DB_NAME . ':' . $wpdb->prefix);
+    if ('1' !== (string) $wpdb->get_var($wpdb->prepare('SELECT GET_LOCK(%s, 0)', $lock))) {
+        error_log('SFS Import: importer busy or database lock unavailable; skipping run.');
+        return;
+    }
+    try {
+        return call_user_func($callback);
+    } finally {
+        $wpdb->get_var($wpdb->prepare('SELECT RELEASE_LOCK(%s)', $lock));
+    }
+}
+
+// Include every status: a draft or trashed import must not be silently recreated.
+// Legacy event/info rows already contain both the source ID and source URL.
+function sfs_find_imported_post($source_id, $feed, $post_type = 'tp_event') {
+    global $wpdb;
+    if ('' === trim((string) $source_id)) {
+        return 0;
+    }
+    $paths = ['event' => '/recent-happening.php', 'info' => '/updates.php'];
+    $identity = ('blog' === $feed ? 'blog.sfsguwahati.ac.in' : 'old.sfsguwahati.ac.in') . ':' . $feed . ':' . (string) $source_id;
+    $legacy = isset($paths[$feed]) ? '%' . $wpdb->esc_like($paths[$feed]) . '?%' : '';
+    return (int) $wpdb->get_var($wpdb->prepare(
+        "SELECT p.ID FROM {$wpdb->posts} p
+         WHERE p.post_type = %s AND (
+             EXISTS (SELECT 1 FROM {$wpdb->postmeta} k WHERE k.post_id = p.ID
+                 AND k.meta_key = '_sfs_import_identity' AND k.meta_value = %s)
+             OR (%s <> '' AND
+                 EXISTS (SELECT 1 FROM {$wpdb->postmeta} s WHERE s.post_id = p.ID
+                     AND s.meta_key = '_sfs_source_id' AND s.meta_value = %s)
+                 AND EXISTS (SELECT 1 FROM {$wpdb->postmeta} u WHERE u.post_id = p.ID
+                     AND u.meta_key = '_sfs_source_url' AND u.meta_value LIKE %s))
+         ) ORDER BY p.ID ASC LIMIT 1",
+        $post_type, $identity, $legacy, (string) $source_id, $legacy
+    ));
+}
+
 function sfs_import_all_events() {
+    return sfs_run_locked_import('sfs_import_all_events_unlocked');
+}
+
+function sfs_import_all_info() {
+    return sfs_run_locked_import('sfs_import_all_info_unlocked');
+}
+
+function sfs_import_blog_posts() {
+    return sfs_run_locked_import('sfs_import_blog_posts_unlocked');
+}
+
+// Retry failed pages up to three times, then revisit them on the next feed cycle.
+// A malformed source item must not indefinitely block all later pages.
+function sfs_finish_import_page($key, $page, $failed) {
+    $retry_key = $key . '_retry';
+    $retry = get_option($retry_key, []);
+    $attempts = is_array($retry) && (string) ($retry['page'] ?? '') === (string) $page
+        ? (int) ($retry['attempts'] ?? 0) : 0;
+    if ($failed && ++$attempts < 3) {
+        update_option($retry_key, ['page' => $page, 'attempts' => $attempts], false);
+        error_log('SFS Import: retaining failed page for retry: ' . $key . ' page ' . $page);
+        return;
+    }
+    if ($failed) {
+        error_log('SFS Import: retry limit reached; deferring failed items until next cycle: ' . $key . ' page ' . $page);
+    }
+    delete_option($retry_key);
+    update_option($key, (string) ((int) $page + 1));
+}
+
+function sfs_import_all_events_unlocked() {
     
     $current_page = get_option(SFS_IMPORTER_PAGE_KEY, '1');
     
@@ -3325,6 +3397,7 @@ function sfs_import_all_events() {
     }
 
     $imported_count = 0;
+    $failed_count = 0;
     $nodes_to_process = [];
     foreach ($items as $item) {
         $nodes_to_process[] = $item;
@@ -3381,23 +3454,28 @@ function sfs_import_all_events() {
 
         if (sfs_import_single_events($item_data)) {
             $imported_count++;
+        } else {
+            $failed_count++;
         }
     }
     
-    if ($imported_count > 0) {
-        $next_page = (int)$current_page + 1;
-        update_option(SFS_IMPORTER_PAGE_KEY, (string)$next_page);
-        error_log("SFS Cron: Successfully imported " . $imported_count . " EVENT items from page " . $current_page . ". Next run will use page " . $next_page . ".");
-    } else {
-        error_log("SFS Cron: No new EVENT items processed from page " . $current_page . ". Assuming end of feed and resetting page to 0.");
-        update_option(SFS_IMPORTER_PAGE_KEY, '0');
-    }
-    
-    // wp_die('Import finished');
+    sfs_finish_import_page(SFS_IMPORTER_PAGE_KEY, $current_page, $failed_count > 0);
+
 }
 
 // --- 2. SINGLE EVENT FETCHER (Fetches detailed post content) ---
 function sfs_import_single_events($item_data) {
+    $existing_id = sfs_find_imported_post($item_data['source_id'] ?? '', 'event');
+    if ($existing_id) {
+        if ('publish' === get_post_status($existing_id) && !has_post_thumbnail($existing_id)
+            && !empty($item_data['image_url'])) {
+            $image_id = sfs_safe_media_sideload_image($item_data['image_url'], $existing_id, $item_data['title']);
+            if ($image_id && !is_wp_error($image_id)) {
+                set_post_thumbnail($existing_id, $image_id);
+            }
+        }
+        return 1;
+    }
     
     $curl_args = [
         "url1" => $item_data['sz'],
@@ -3430,7 +3508,7 @@ function sfs_import_single_events($item_data) {
     } else {
         $item_data['post_content'] = '';
     }
-error_log('badal: ' . wp_json_encode($item_data, JSON_PRETTY_PRINT));
+
 
     if (sfs_create_post_from_item($item_data)) {
         return 1;
@@ -3441,17 +3519,13 @@ error_log('badal: ' . wp_json_encode($item_data, JSON_PRETTY_PRINT));
 
 // --- 3. POST CREATION FUNCTION for Events (Unchanged) ---
 function sfs_create_post_from_item($item) {
-    // ... (Existing post creation logic for tp_event, NO category assignment needed here, 
-    // assuming it defaults to 'Event' or is handled elsewhere) ...
-    $existing_post = get_posts([
-        'post_type' => 'tp_event', 
-        'post_status' => 'publish',
-        'title' => $item['title'],
-        'posts_per_page' => 1,
-    ]);
-
-    if (!empty($existing_post)) {
-        return false; 
+    if (empty($item['source_id'])) {
+        error_log('SFS Import: missing source identity; item skipped.');
+        return false;
+    }
+    $existing_id = sfs_find_imported_post($item['source_id'], 'event');
+    if ($existing_id) {
+        return true;
     }
 
     $date_obj = $item['date_string'];
@@ -3467,9 +3541,10 @@ function sfs_create_post_from_item($item) {
         'post_date_gmt' => get_gmt_from_date($post_date),
     ];
 
-    $post_id = wp_insert_post($post_data);
-    if (is_wp_error($post_id)) {
-        error_log('SFS Importer: Failed to insert EVENT post. Error: ' . $post_id->get_error_message());
+    $post_data['meta_input'] = ['_sfs_import_identity' => 'old.sfsguwahati.ac.in:event:' . $item['source_id']];
+    $post_id = wp_insert_post($post_data, true);
+    if (!$post_id || is_wp_error($post_id)) {
+        error_log('SFS Import: post insertion failed.');
         return false;
     }
 
@@ -3522,7 +3597,7 @@ function sfs_create_post_from_item($item) {
     add_post_meta($post_id, '_yoast_wpseo_content_score', 90, true);
     add_post_meta($post_id, '_yoast_wpseo_estimated-reading-time-minutes', 1, true);
 
-    error_log('badal2: ' . wp_json_encode($item, JSON_PRETTY_PRINT));
+
             
     if (!empty($item['image_url'])) {
     
@@ -3547,6 +3622,25 @@ function sfs_create_post_from_item($item) {
 }
 
 function sfs_safe_media_sideload_image($url, $post_id, $title = '') {
+
+    // Reuse only a source-URL match whose original file is still available.
+    $existing = get_posts([
+        'post_type' => 'attachment', 'post_status' => 'inherit',
+        'posts_per_page' => -1, 'fields' => 'ids',
+        'meta_key' => '_source_url', 'meta_value' => esc_url_raw($url),
+    ]);
+    foreach ($existing as $id) {
+        $path = get_attached_file($id);
+        if ($path && is_file($path)) {
+            if (!wp_get_attachment_metadata($id)) {
+                $metadata = wp_generate_attachment_metadata($id, $path);
+                if (!empty($metadata) && !is_wp_error($metadata)) {
+                    wp_update_attachment_metadata($id, $metadata);
+                }
+            }
+            return (int) $id;
+        }
+    }
 
     error_log('[SFS IMAGE] START');
 
@@ -3589,13 +3683,17 @@ function sfs_safe_media_sideload_image($url, $post_id, $title = '') {
             'post_status'    => 'inherit',
         ],
         $sideload['file'],
-        $post_id
+        $post_id,
+        true
     );
 
-    if (is_wp_error($attachment_id)) {
-        error_log('[SFS IMAGE] wp_insert_attachment ERROR: ' . $attachment_id->get_error_message());
+    if (!$attachment_id || is_wp_error($attachment_id)) {
+        // This file was just created by this attempt and has no attachment row.
+        wp_delete_file($sideload['file']);
+        error_log('[SFS IMAGE] attachment insertion failed; new upload removed.');
         return false;
     }
+    update_post_meta($attachment_id, '_source_url', esc_url_raw($url));
 
     error_log('[SFS IMAGE] attachment_id: ' . $attachment_id);
 
@@ -3606,7 +3704,7 @@ function sfs_safe_media_sideload_image($url, $post_id, $title = '') {
         error_log('[SFS IMAGE] metadata generation FAILED for JPG');
     
         // 🔥 still mark attachment usable
-        update_post_meta($attachment_id, '_wp_attached_file', basename($sideload['file']));
+        update_attached_file($attachment_id, $sideload['file']);
     } else {
         wp_update_attachment_metadata($attachment_id, $meta);
     }
@@ -3622,7 +3720,7 @@ function sfs_safe_media_sideload_image($url, $post_id, $title = '') {
 
 const SFS_IMPORTER_INFO_PAGE_KEY = 'sfs_importer_info_current_page';
 
-function sfs_import_all_info() {
+function sfs_import_all_info_unlocked() {
     
     $current_page = get_option(SFS_IMPORTER_INFO_PAGE_KEY, '1');
     
@@ -3664,6 +3762,7 @@ function sfs_import_all_info() {
     }
 
     $imported_count = 0;
+    $failed_count = 0;
     $nodes_to_process = [];
     foreach ($items as $item) {
         $nodes_to_process[] = $item;
@@ -3731,21 +3830,20 @@ function sfs_import_all_info() {
 
         if (sfs_import_single_info($item_data)) {
             $imported_count++;
+        } else {
+            $failed_count++;
         }
     }
     
-    if ($imported_count > 0) {
-        $next_page = (int)$current_page + 1;
-        update_option(SFS_IMPORTER_INFO_PAGE_KEY, (string)$next_page);
-        error_log("SFS Cron: Successfully imported " . $imported_count . " INFO items from page " . $current_page . ". Next run will use page " . $next_page . ".");
-    } else {
-        error_log("SFS Cron: No new INFO items processed from page " . $current_page . ". Assuming end of feed and resetting page to 0.");
-        update_option(SFS_IMPORTER_INFO_PAGE_KEY, '0');
-    }
+    sfs_finish_import_page(SFS_IMPORTER_INFO_PAGE_KEY, $current_page, $failed_count > 0);
+
 }
 
 // --- NEW 2. SINGLE INFORMATION FETCHER (Fetches detailed post content) ---
 function sfs_import_single_info($item_data) {
+    if (sfs_find_imported_post($item_data['source_id'] ?? '', 'info')) {
+        return 1;
+    }
     
     $curl_args = [
         "url1" => $item_data['sz'],
@@ -3767,17 +3865,30 @@ function sfs_import_single_info($item_data) {
     $raw_html_string = $data->d[0]->_data;
 
     if (strpos($raw_html_string, 'update-content') !== false) {
-        $info_items = sfs_clean_and_extract_notice_content($raw_html_string);
-        foreach ($info_items as $item_data) {
-            // insert into DB or wp_posts, as you do now
+        if (!function_exists('sfs_clean_and_extract_notice_content')) {
+            error_log('SFS Import: notice parser unavailable; retaining page for review.');
+            return 0;
         }
+        $info_items = sfs_clean_and_extract_notice_content($raw_html_string);
+        if (!is_array($info_items) || count($info_items) !== 1) {
+            error_log('SFS Import: ambiguous notice detail; retaining page for review.');
+            return 0;
+        }
+        $notice = reset($info_items);
+        if (!is_array($notice)) {
+            return 0;
+        }
+        $item_data = array_merge($item_data, $notice, [
+            'source_id' => $item_data['source_id'],
+            'source_url' => $item_data['source_url'],
+        ]);
     } else {
         $clean_data = sfs_clean_and_extract_info_content($raw_html_string);
         $item_data['title']        = $clean_data['title'];
         $item_data['date_string']  = $clean_data['date'];
         $item_data['post_content'] = $clean_data['file_url'];
         $item_data['description'] = $clean_data['description'];
-        $item_data['just_text'] = $clean_data['just_text'];
+        $item_data['just_text'] = $clean_data['just_text'] ?? '';
     }
 
     if (sfs_create_info_post_from_item($item_data)) {
@@ -3790,15 +3901,13 @@ function sfs_import_single_info($item_data) {
 // --- NEW 3. POST CREATION FUNCTION for Information ---
 function sfs_create_info_post_from_item($item) {
     
-    $existing_post = get_posts([
-        'post_type' => 'tp_event', 
-        'post_status' => 'publish',
-        'title' => $item['title'],
-        'posts_per_page' => 1,
-    ]);
-
-    if (!empty($existing_post)) {
+    if (empty($item['source_id'])) {
+        error_log('SFS Import: missing source identity; item skipped.');
         return false;
+    }
+    $existing_id = sfs_find_imported_post($item['source_id'], 'info');
+    if ($existing_id) {
+        return true;
     }
 
     $date_obj = $item['date_string'];
@@ -3814,9 +3923,10 @@ function sfs_create_info_post_from_item($item) {
         'post_date_gmt' => get_gmt_from_date($post_date),
     ];
 
-    $post_id = wp_insert_post($post_data);
-    if (is_wp_error($post_id)) {
-        error_log('SFS Importer: Failed to insert INFO post. Error: ' . $post_id->get_error_message());
+    $post_data['meta_input'] = ['_sfs_import_identity' => 'old.sfsguwahati.ac.in:info:' . $item['source_id']];
+    $post_id = wp_insert_post($post_data, true);
+    if (!$post_id || is_wp_error($post_id)) {
+        error_log('SFS Import: post insertion failed.');
         return false;
     }
     
@@ -3863,18 +3973,8 @@ function sfs_create_info_post_from_item($item) {
     add_post_meta($post_id, '_yoast_wpseo_estimated-reading-time-minutes', 1, true);
 
 
-    if (!empty($item['image_url'])) {
-        $attachment_id = media_sideload_image($item['image_url'], $post_id, $item['title'], 'id');
-        if (!is_wp_error($attachment_id)) {
-            set_post_thumbnail($post_id, SFS_DEFAULT_INFO_IMAGE_ID);
-        } else {
-            error_log('SFS Importer: Failed to sideload INFO image: ' . $attachment_id->get_error_message());
-            set_post_thumbnail($post_id, SFS_DEFAULT_INFO_IMAGE_ID);
-        }
-    } else {
-        set_post_thumbnail($post_id, SFS_DEFAULT_INFO_IMAGE_ID);
-    }
-    
+    set_post_thumbnail($post_id, SFS_DEFAULT_INFO_IMAGE_ID);
+
     return true;
 }
 
@@ -4214,131 +4314,102 @@ add_action( 'wp_ajax_nopriv_get_post_details', 'custom_get_post_details_ajax' );
 
 
 // 🔹 MAIN IMPORT FUNCTION
-function sfs_import_blog_posts() {
-    $page = (int) get_option('sfs_import_page', 1);
+function sfs_import_blog_posts_unlocked() {
+    $page = max(1, (int) get_option('sfs_import_page', 1));
     $api_url = "https://blog.sfsguwahati.ac.in/wp-json/wp/v2/posts?_fields=id,title,excerpt,link,_links,date,modified&per_page=12&page={$page}";
-    
     $response = wp_remote_get($api_url);
     if (is_wp_error($response)) {
-        error_log('SFS Import: API request failed.');
+        error_log('SFS Import: blog request failed; retaining page.');
         return;
     }
-
-    $body = wp_remote_retrieve_body($response);
-    $posts = json_decode($body);
-
-    // Stop pagination if empty
-    if (empty($posts) || !is_array($posts)) {
-        error_log("SFS Import: No posts found on page {$page}. Resetting page count.");
+    $posts = json_decode(wp_remote_retrieve_body($response));
+    if (isset($posts->code) && 'rest_post_invalid_page_number' === $posts->code) {
+        update_option('sfs_import_page', 1);
+        return;
+    }
+    if (200 !== wp_remote_retrieve_response_code($response) || !is_array($posts)) {
+        error_log('SFS Import: invalid blog response; retaining page.');
+        return;
+    }
+    if (!$posts) {
         update_option('sfs_import_page', 1);
         return;
     }
 
-    require_once ABSPATH . 'wp-admin/includes/file.php';
-    require_once ABSPATH . 'wp-admin/includes/media.php';
-    require_once ABSPATH . 'wp-admin/includes/image.php';
-
-    $imported_count = 0;
-    $default_image = '/wp-content/uploads/2021/01/logoN.png';
-
+    $failed = false;
+    $uploads = wp_get_upload_dir();
+    $default_id = attachment_url_to_postid(trailingslashit($uploads['baseurl']) . '2021/01/logoN.png');
     foreach ($posts as $item) {
         $title = wp_strip_all_tags($item->title->rendered ?? '');
-        $content = $item->excerpt->rendered ?? '';
-        $date = $item->date ?? current_time('mysql');
+        $source_id = (int) ($item->id ?? 0);
+        $original_link = esc_url_raw($item->link ?? '');
+        if (!$title || !$source_id || !$original_link) {
+            $failed = true;
+            continue;
+        }
         $slug = sanitize_title($title);
-        $original_link = esc_url($item->link ?? '');
-
-        if (empty($title)) continue;
-
-        // Skip duplicates
-        $existing = get_page_by_path($slug, OBJECT, 'post');
-        if ($existing) continue;
-
-        // === Featured Image Logic ===
-        $image_url = '';
+        $post_id = sfs_find_imported_post($source_id, 'blog', 'post');
+        if (!$post_id) {
+            $legacy = get_page_by_path($slug, OBJECT, 'post');
+            if ($legacy && !get_post_meta($legacy->ID, '_sfs_import_identity', true)) {
+                // Only adopt a legacy post when its outbound link confirms provenance.
+                $escaped_link = esc_url($original_link);
+                if (false === strpos($legacy->post_content, "href='" . $escaped_link . "'")
+                    && false === strpos($legacy->post_content, 'href="' . $escaped_link . '"')) {
+                    error_log('SFS Import: ambiguous legacy blog slug; item requires review: ' . $source_id);
+                    $failed = true;
+                    continue;
+                }
+                $post_id = $legacy->ID;
+                update_post_meta($post_id, '_sfs_import_identity', 'blog.sfsguwahati.ac.in:blog:' . $source_id);
+            }
+        }
+        if ($post_id && ('publish' !== get_post_status($post_id) || has_post_thumbnail($post_id))) {
+            continue;
+        }
+        if (!$post_id) {
+            $content = $item->excerpt->rendered ?? '';
+            $content .= "<div style='margin-top:20px;'><a href='" . esc_url($original_link)
+                . "' target='_blank' rel='noopener noreferrer' style='background:#9d2235;color:#fff;padding:8px 16px;border-radius:5px;text-decoration:none;display:inline-block;'>Read Full Post on SFS Blog</a></div>";
+            $post_id = wp_insert_post([
+                'post_title' => $title, 'post_name' => $slug, 'post_content' => $content,
+                'post_status' => 'publish', 'post_type' => 'post',
+                'post_date' => $item->date ?? current_time('mysql'),
+                'meta_input' => [
+                    '_sfs_import_identity' => 'blog.sfsguwahati.ac.in:blog:' . $source_id,
+                    '_sfs_source_id' => $source_id, '_sfs_source_url' => $original_link,
+                ],
+            ], true);
+            if (!$post_id || is_wp_error($post_id)) {
+                error_log('SFS Import: blog insertion failed: ' . $source_id);
+                $failed = true;
+                continue;
+            }
+        }
+        $image_id = $default_id;
         if (!empty($item->_links->{'wp:featuredmedia'}[0]->href)) {
-            $media_api = $item->_links->{'wp:featuredmedia'}[0]->href;
-            $media_response = wp_remote_get($media_api);
-            if (!is_wp_error($media_response)) {
-                $media_data = json_decode(wp_remote_retrieve_body($media_response));
-                if (!empty($media_data->source_url) && filter_var($media_data->source_url, FILTER_VALIDATE_URL)) {
-                    $image_url = esc_url_raw($media_data->source_url);
-                }
+            $media_response = wp_remote_get($item->_links->{'wp:featuredmedia'}[0]->href);
+            if (is_wp_error($media_response) || 200 !== wp_remote_retrieve_response_code($media_response)) {
+                // Leave the thumbnail unset so the next pass retries it.
+                $failed = true;
+                continue;
+            }
+            $media = json_decode(wp_remote_retrieve_body($media_response));
+            if (empty($media->source_url) || !filter_var($media->source_url, FILTER_VALIDATE_URL)) {
+                $failed = true;
+                continue;
+            }
+            $image_id = sfs_safe_media_sideload_image(esc_url_raw($media->source_url), $post_id, $title);
+            if (!$image_id || is_wp_error($image_id)) {
+                $failed = true;
+                continue;
             }
         }
-
-        // ✅ Ensure fallback image is always used if none valid
-        if (empty($image_url)) {
-            $image_url = $default_image;
+        if ($image_id) {
+            set_post_thumbnail($post_id, $image_id);
         }
-
-        // === Download image locally ===
-        $local_image_id = '';
-        if (!empty($image_url)) {
-            $tmp = download_url($image_url);
-
-            if (!is_wp_error($tmp)) {
-                $file_array = [
-                    'name' => basename(parse_url($image_url, PHP_URL_PATH)),
-                    'tmp_name' => $tmp,
-                ];
-
-                $local_image_id = media_handle_sideload($file_array, 0);
-
-                if (is_wp_error($local_image_id)) {
-                    @unlink($tmp);
-                    $local_image_id = '';
-                }
-            } else {
-                // fallback download failed too → use default
-                $local_image_id = '';
-            }
-        }
-
-        // === Add "Read Full Post" button ===
-        $content .= "<div style='margin-top:20px;'>
-            <a href='{$original_link}' target='_blank' rel='noopener noreferrer'
-               style='background:#9d2235;color:#fff;padding:8px 16px;border-radius:5px;text-decoration:none;display:inline-block;'>
-               🔗 Read Full Post on SFS Blog
-            </a>
-        </div>";
-
-        // === Create local post ===
-        $post_data = [
-            'post_title'   => $title,
-            'post_name'    => $slug,
-            'post_content' => $content,
-            'post_status'  => 'publish',
-            'post_date'    => $date,
-            'post_type'    => 'post',
-        ];
-        $post_id = wp_insert_post($post_data);
-
-        // === Set featured image ===
-        if ($post_id) {
-            if ($local_image_id) {
-                set_post_thumbnail($post_id, $local_image_id);
-            } else {
-                // If even download failed, attach the default image from media library
-                $default_id = attachment_url_to_postid($default_image);
-                if ($default_id) {
-                    set_post_thumbnail($post_id, $default_id);
-                }
-            }
-        }
-
-        $imported_count++;
-        sleep(1);
     }
-
-    // ✅ Move to next page only if something imported
-    if ($imported_count > 0) {
-        update_option('sfs_import_page', $page + 1);
-        error_log("SFS Import: Imported {$imported_count} posts from page {$page}. Moving to page " . ($page + 1));
-    } else {
-        update_option('sfs_import_page', 1);
-        error_log("SFS Import: No new posts on page {$page}. Resetting to page 1.");
-    }
+    sfs_finish_import_page('sfs_import_page', $page, $failed);
 }
 
 add_filter('wp_mail_from', function() {
@@ -4352,21 +4423,17 @@ add_filter('wp_mail_from_name', function() {
 function delete_duplicate_tp_events() {
     global $wpdb;
 
-    // 1. Delete duplicates (keep latest ID)
-    $delete_query = "
-        DELETE FROM {$wpdb->posts}
-        WHERE ID NOT IN (
-            SELECT * FROM (
-                SELECT MAX(ID)
-                FROM {$wpdb->posts}
-                WHERE post_type = 'tp_event'
-                GROUP BY post_title
-            ) AS keep_ids
-        )
-        AND post_type = 'tp_event';
-    ";
-
-    $wpdb->query($delete_query);
+    // Titles are not source identities. Report collisions without deleting posts
+    // or media; historical cleanup requires a separate reference audit.
+    $duplicate_groups = (int) $wpdb->get_var(
+        "SELECT COUNT(*) FROM (
+            SELECT post_title FROM {$wpdb->posts}
+            WHERE post_type = 'tp_event' GROUP BY post_title HAVING COUNT(*) > 1
+        ) AS duplicate_titles"
+    );
+    if ($duplicate_groups) {
+        error_log('SFS Import: title collisions requiring review: ' . $duplicate_groups);
+    }
 
     // 2. Update old domain to new domain in post_content
     $update_query = "
